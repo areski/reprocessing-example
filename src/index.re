@@ -1,31 +1,24 @@
 open Reprocessing;
 
-type vector = {
+let xmax = 800;
+let ymax = 800;
+let g = 0.2;
+
+type coordinates2D = {
   x: float,
   y: float,
 };
 
-type itemKind =
-  | Banana
-  | Apple
-  | Coconut
-  | Pineapple
-  | Watermelon
-  | Bomb;
-
-type itemType = {
-  kind: itemKind,
-  vector,
-  coordinate: vector,
+type fruit = {
+  vector: coordinates2D,
+  coordinate: coordinates2D,
+  fruit_number: int,
 };
 
 type stateT = {
-  listofitem: list(itemType),
-  bananaImage: imageT,
-  appleImage: imageT,
-  coconutImage: imageT,
-  pineappleImage: imageT,
-  watermelonImage: imageT,
+  fruit_images: array(imageT),
+  list_of_fruits: list(fruit),
+  background: imageT,
   bombImage: imageT,
 };
 
@@ -38,11 +31,20 @@ let updateItem = item => {
 };
 
 let setup = env => {
-  Env.size(~width=800, ~height=800, env);
+  Env.size(~width=xmax, ~height=ymax, env);
+  let fruit_images = [|
+    Draw.loadImage(~filename="./assets/apple_small.png", env),
+    Draw.loadImage(~filename="./assets/banana_small.png", env),
+    Draw.loadImage(~filename="./assets/coconut_small.png", env),
+    Draw.loadImage(~filename="./assets/orange_small.png", env),
+    Draw.loadImage(~filename="./assets/pineapple_small.png", env),
+    Draw.loadImage(~filename="./assets/watermelon_small.png", env),
+  |];
   {
-    listofitem: [
+    background: Draw.loadImage(~filename="./assets/background.png", env),
+    list_of_fruits: [
       {
-        kind: Coconut,
+        fruit_number: Random.int(6),
         vector: {
           x: 0.1,
           y: 0.2,
@@ -53,18 +55,18 @@ let setup = env => {
         },
       },
       {
-        kind: Apple,
+        fruit_number: Random.int(6),
         vector: {
           x: 0.5,
           y: 0.1,
         },
         coordinate: {
-          x: 0.0,
+          x: 10.0,
           y: 200.0,
         },
       },
       {
-        kind: Banana,
+        fruit_number: Random.int(6),
         vector: {
           x: 1.0,
           y: 0.3,
@@ -75,7 +77,7 @@ let setup = env => {
         },
       },
       {
-        kind: Watermelon,
+        fruit_number: Random.int(6),
         vector: {
           x: 0.5,
           y: 0.5,
@@ -86,7 +88,7 @@ let setup = env => {
         },
       },
       {
-        kind: Pineapple,
+        fruit_number: Random.int(6),
         vector: {
           x: 0.5,
           y: 0.5,
@@ -97,7 +99,7 @@ let setup = env => {
         },
       },
       {
-        kind: Bomb,
+        fruit_number: Random.int(6),
         vector: {
           x: 0.2,
           y: 0.5,
@@ -108,7 +110,7 @@ let setup = env => {
         },
       },
       {
-        kind: Bomb,
+        fruit_number: Random.int(6),
         vector: {
           x: (-0.5),
           y: (-0.5),
@@ -119,7 +121,7 @@ let setup = env => {
         },
       },
       {
-        kind: Bomb,
+        fruit_number: Random.int(6),
         vector: {
           x: (-0.5),
           y: (-0.5),
@@ -130,97 +132,31 @@ let setup = env => {
         },
       },
     ],
-    bananaImage: Draw.loadImage(~filename="./assets/banana_small.png", env),
-    appleImage: Draw.loadImage(~filename="assets/apple_small.png", env),
-    coconutImage: Draw.loadImage(~filename="assets/coconut_small.png", env),
-    pineappleImage:
-      Draw.loadImage(~filename="assets/pineapple_small.png", env),
-    watermelonImage:
-      Draw.loadImage(~filename="assets/watermelon_small.png", env),
     bombImage: Draw.loadImage(~filename="assets/bomb_small.png", env),
+    fruit_images,
+    // fruits: [Fruit.initial(), Fruit.initial(), Fruit.initial()],
   };
 };
 
 let draw = (state, env) => {
-  Draw.background(Utils.color(~r=255, ~g=217, ~b=229, ~a=255), env);
-  Draw.fill(Utils.color(~r=41, ~g=166, ~b=244, ~a=255), env);
-
-  List.iter(
-    item =>
-      switch (item.kind) {
-      | Banana =>
-        Draw.subImagef(
-          state.bananaImage,
-          ~pos=(item.coordinate.x, item.coordinate.y),
-          ~width=100.,
-          ~height=100.,
-          ~texPos=(0, 0),
-          ~texWidth=100,
-          ~texHeight=100,
-          env,
-        )
-      | Apple =>
-        Draw.subImagef(
-          state.appleImage,
-          ~pos=(item.coordinate.x, item.coordinate.y),
-          ~width=64.,
-          ~height=70.,
-          ~texPos=(0, 0),
-          ~texWidth=100,
-          ~texHeight=100,
-          env,
-        )
-      | Coconut =>
-        Draw.subImagef(
-          state.coconutImage,
-          ~pos=(item.coordinate.x, item.coordinate.y),
-          ~width=100.,
-          ~height=100.,
-          ~texPos=(0, 0),
-          ~texWidth=100,
-          ~texHeight=100,
-          env,
-        )
-      | Pineapple =>
-        Draw.subImagef(
-          state.pineappleImage,
-          ~pos=(item.coordinate.x, item.coordinate.y),
-          ~width=100.,
-          ~height=100.,
-          ~texPos=(0, 0),
-          ~texWidth=100,
-          ~texHeight=100,
-          env,
-        )
-      | Watermelon =>
-        Draw.subImagef(
-          state.watermelonImage,
-          ~pos=(item.coordinate.x, item.coordinate.y),
-          ~width=100.,
-          ~height=100.,
-          ~texPos=(0, 0),
-          ~texWidth=100,
-          ~texHeight=100,
-          env,
-        )
-      | Bomb =>
-        Draw.subImagef(
-          state.bombImage,
-          ~pos=(item.coordinate.x, item.coordinate.y),
-          ~width=100.,
-          ~height=100.,
-          ~texPos=(0, 0),
-          ~texWidth=100,
-          ~texHeight=100,
-          env,
-        )
-      },
-    state.listofitem,
-  );
+  Draw.image(state.background, ~pos=(0, 0), ~width=xmax, ~height=ymax, env);
+  state.list_of_fruits
+  |> List.iter(item =>
+       Draw.subImagef(
+         state.fruit_images[item.fruit_number],
+         ~pos=(item.coordinate.x, item.coordinate.y),
+         ~width=100.,
+         ~height=100.,
+         ~texPos=(0, 0),
+         ~texWidth=100,
+         ~texHeight=100,
+         env,
+       )
+     );
 
   let state = {
     ...state,
-    listofitem: state.listofitem |> List.map(updateItem),
+    list_of_fruits: state.list_of_fruits |> List.map(updateItem),
   };
   state;
 };
