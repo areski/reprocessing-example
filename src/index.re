@@ -2,6 +2,7 @@ open Reprocessing;
 
 let xmax = 800;
 let ymax = 800;
+let max_fruit = 10;
 let g = 0.2;
 
 type coordinates2D = {
@@ -12,11 +13,11 @@ type coordinates2D = {
 type fruit = {
   vector: coordinates2D,
   coordinate: coordinates2D,
-  fruit_number: int,
+  id_number: int,
 };
 
 type stateT = {
-  fruit_images: array(imageT),
+  fruit_img_src: array(imageT),
   list_of_fruits: list(fruit),
   background: imageT,
   bombImage: imageT,
@@ -32,7 +33,7 @@ let updateItem = item => {
 
 let setup = env => {
   Env.size(~width=xmax, ~height=ymax, env);
-  let fruit_images = [|
+  let fruit_img_src = [|
     Draw.loadImage(~filename="./assets/apple_small.png", env),
     Draw.loadImage(~filename="./assets/banana_small.png", env),
     Draw.loadImage(~filename="./assets/coconut_small.png", env),
@@ -42,109 +43,48 @@ let setup = env => {
   |];
   {
     background: Draw.loadImage(~filename="./assets/background.png", env),
-    list_of_fruits: [
-      {
-        fruit_number: Random.int(6),
-        vector: {
-          x: 0.1,
-          y: 0.2,
-        },
-        coordinate: {
-          x: 0.0,
-          y: 700.0,
-        },
-      },
-      {
-        fruit_number: Random.int(6),
-        vector: {
-          x: 0.5,
-          y: 0.1,
-        },
-        coordinate: {
-          x: 10.0,
-          y: 200.0,
-        },
-      },
-      {
-        fruit_number: Random.int(6),
-        vector: {
-          x: 1.0,
-          y: 0.3,
-        },
-        coordinate: {
-          x: 190.0,
-          y: 0.0,
-        },
-      },
-      {
-        fruit_number: Random.int(6),
-        vector: {
-          x: 0.5,
-          y: 0.5,
-        },
-        coordinate: {
-          x: 0.0,
-          y: 200.0,
-        },
-      },
-      {
-        fruit_number: Random.int(6),
-        vector: {
-          x: 0.5,
-          y: 0.5,
-        },
-        coordinate: {
-          x: 0.0,
-          y: 50.0,
-        },
-      },
-      {
-        fruit_number: Random.int(6),
-        vector: {
-          x: 0.2,
-          y: 0.5,
-        },
-        coordinate: {
-          x: 20.0,
-          y: 0.0,
-        },
-      },
-      {
-        fruit_number: Random.int(6),
-        vector: {
-          x: (-0.5),
-          y: (-0.5),
-        },
-        coordinate: {
-          x: 1000.0,
-          y: 1000.0,
-        },
-      },
-      {
-        fruit_number: Random.int(6),
-        vector: {
-          x: (-0.5),
-          y: (-0.5),
-        },
-        coordinate: {
-          x: 0.0,
-          y: 400.0,
-        },
-      },
-    ],
+    list_of_fruits: [],
     bombImage: Draw.loadImage(~filename="assets/bomb_small.png", env),
-    fruit_images,
+    fruit_img_src,
     // fruits: [Fruit.initial(), Fruit.initial(), Fruit.initial()],
   };
 };
 
+let xDirection = () =>
+  if (Random.int(2) >= 1) {
+    0.0 -. Random.float(0.2);
+  } else {
+    0.0 +. Random.float(0.2);
+  };
+
+let yDirection = () => (-0.5) -. Random.float(0.5);
+
+let initialDirection = () => {x: xDirection(), y: yDirection()};
+
+let newFruit = () => {
+  id_number: Random.int(6),
+  vector: initialDirection(),
+  coordinate: {
+    x: Int32.to_float(Int32.of_int(xmax)) /. 2.,
+    y: Int32.to_float(Int32.of_int(ymax)),
+  },
+};
+
+let generateFruit = ({list_of_fruits}) =>
+  if (List.length(list_of_fruits) < max_fruit) {
+    [newFruit(), ...list_of_fruits];
+  } else {
+    list_of_fruits;
+  };
+
 let draw = (state, env) => {
   Draw.image(state.background, ~pos=(0, 0), ~width=xmax, ~height=ymax, env);
-  state.list_of_fruits
-  |> List.iter(item =>
+  let list_of_fruits = generateFruit(state);
+  list_of_fruits
+  |> List.iter(fruit =>
        Draw.subImagef(
-         state.fruit_images[item.fruit_number],
-         ~pos=(item.coordinate.x, item.coordinate.y),
+         state.fruit_img_src[fruit.id_number],
+         ~pos=(fruit.coordinate.x, fruit.coordinate.y),
          ~width=100.,
          ~height=100.,
          ~texPos=(0, 0),
@@ -156,7 +96,7 @@ let draw = (state, env) => {
 
   let state = {
     ...state,
-    list_of_fruits: state.list_of_fruits |> List.map(updateItem),
+    list_of_fruits: list_of_fruits |> List.map(updateItem),
   };
   state;
 };
